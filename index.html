@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LiftLog API Tester</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        input, button {
+            margin: 5px 0;
+            padding: 10px;
+            width: 100%;
+        }
+
+        #result {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+
+<h1>LiftLog API Tester</h1>
+
+<!-- Registration Form -->
+<h2>Register</h2>
+<form id="register-form">
+    <input type="text" id="register-username" placeholder="Username" required><br>
+    <input type="email" id="register-email" placeholder="Email" required><br>
+    <input type="password" id="register-password" placeholder="Password" required><br>
+    <button type="submit">Register</button>
+</form>
+
+<!-- Login Form -->
+<h2>Login</h2>
+<form id="login-form">
+    <input type="text" id="login-username" placeholder="Username" required><br>
+    <input type="password" id="login-password" placeholder="Password" required><br>
+    <button type="submit">Login</button>
+</form>
+
+<!-- Get Workout (Protected) -->
+<h2>Get Workout (Protected)</h2>
+<form id="get-workout-form">
+    <input type="date" id="workout-date" required><br>
+    <button type="submit">Get Workout</button>
+</form>
+
+<!-- Who Am I (Protected) -->
+<h2>Who Am I</h2>
+<button id="whoami-btn">Who Am I</button>
+
+<!-- Logout Button -->
+<h2>Logout</h2>
+<button id="logout-btn">Logout</button>
+
+<h2>Result</h2>
+<pre id="result"></pre>
+
+<script>
+    // Store JWT tokens
+    let accessToken = '';
+
+    // Utility function to show response in result box
+    function showResult(data) {
+        document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+    }
+
+    // Registration
+    document.getElementById('register-form').addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const username = document.getElementById('register-username').value;
+        const email = document.getElementById('register-email').value;
+        const password = document.getElementById('register-password').value;
+
+        const response = await fetch('http://localhost:8080/api/auth/register', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ username, email, password: password })
+        });
+
+        const result = await response.json();
+        showResult(result);
+    });
+
+    // Login
+    document.getElementById('login-form').addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const username = document.getElementById('login-username').value;
+        const password = document.getElementById('login-password').value;
+
+        const response = await fetch('http://localhost:8080/api/auth/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ username, password: password })
+        });
+
+        const result = await response.json();
+
+        // Store the access token
+        if (result.access_token) {
+            accessToken = result.access_token;
+        }
+
+        showResult(result);
+    });
+
+    // Get Workout (Protected Route)
+    document.getElementById('get-workout-form').addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const date = document.getElementById('workout-date').value;
+
+        const response = await fetch(`http://localhost:8080/api/workouts/${date}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`
+            }
+        });
+
+        const result = await response.json();
+        showResult(result);
+    });
+
+    // Who Am I (Protected Route)
+    document.getElementById('whoami-btn').addEventListener('click', async function () {
+        const response = await fetch('http://localhost:8080/api/auth/whoami', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`
+            }
+        });
+
+        const result = await response.json();
+        showResult(result);
+    });
+
+    // Logout
+    document.getElementById('logout-btn').addEventListener('click', async function () {
+        const response = await fetch('http://localhost:8080/api/auth/logout', {
+            method: 'POST'
+        });
+
+        const result = await response.json();
+
+        // Clear the access token on logout
+        accessToken = '';
+
+        showResult(result);
+    });
+</script>
+
+</body>
+</html>
