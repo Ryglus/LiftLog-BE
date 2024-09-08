@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"LiftLog-BE/services"
+	"errors"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
@@ -39,10 +40,10 @@ func Register(c *gin.Context) {
 	}
 
 	err := services.RegisterUser(input.Username, input.Email, input.Password)
-	if err == services.ErrMissingFields {
+	if errors.Is(err, services.ErrMissingFields) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "All fields are required"})
 		return
-	} else if err == services.ErrFailedToHashPassword {
+	} else if errors.Is(err, services.ErrFailedToHashPassword) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
 		return
 	} else if err != nil {
@@ -65,13 +66,13 @@ func Login(c *gin.Context) {
 	}
 
 	accessToken, refreshToken, err := services.LoginUser(input.Username, input.Password)
-	if err == services.ErrMissingFields {
+	if errors.Is(err, services.ErrMissingFields) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Username and password are required"})
 		return
-	} else if err == services.ErrUserNotFound || err == services.ErrInvalidCredentials {
+	} else if errors.Is(err, services.ErrUserNotFound) || errors.Is(err, services.ErrInvalidCredentials) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
-	} else if err == services.ErrFailedToCreateToken {
+	} else if errors.Is(err, services.ErrFailedToCreateToken) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not create token"})
 		return
 	} else if err != nil {
