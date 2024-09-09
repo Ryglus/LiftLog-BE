@@ -45,9 +45,8 @@
 </form>
 
 <!-- Get Workout (Protected) -->
-<h2>Get Workout (Protected)</h2>
-<form id="get-workout-form">
-    <input type="date" id="workout-date" required><br>
+<h2>Get Users (Protected)</h2>
+<form id="get-users-form">
     <button type="submit">Get Workout</button>
 </form>
 
@@ -115,11 +114,10 @@
     });
 
     // Get Workout (Protected Route)
-    document.getElementById('get-workout-form').addEventListener('submit', async function (e) {
+    document.getElementById('get-users-form').addEventListener('submit', async function (e) {
         e.preventDefault();
-        const date = document.getElementById('workout-date').value;
 
-        const response = await fetch(`http://localhost:8080/api/workouts/${date}`, {
+        const response = await fetch(`http://localhost:8081/api/users/asd`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${accessToken}`

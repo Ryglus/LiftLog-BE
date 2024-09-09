@@ -8,9 +8,10 @@ import (
 
 func AuthRoutes(r *gin.Engine) {
 	// Public routes
-	r.POST("/api/auth/register", controllers.Register)
-	r.POST("/api/auth/login", controllers.Login)
-	r.POST("/api/auth/logout", controllers.Logout)
+	unprotected := r.Group("/api/auth")
+	unprotected.POST("/register", controllers.Register)
+	unprotected.POST("/login", controllers.Login)
+	unprotected.POST("/logout", controllers.Logout)
 
 	// Protected route
 	protected := r.Group("/api/auth")
