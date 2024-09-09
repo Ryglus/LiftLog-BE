@@ -33,7 +33,7 @@ func ConnectDatabase() {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
-	err = DB.AutoMigrate(&models.User{}, &models.Food{}, &models.Supplement{}, &models.Lift{}, &models.WorkoutSplit{}, &models.Exercise{})
+	err = DB.AutoMigrate(&models.User{})
 	if err != nil {
 		return
 	}
