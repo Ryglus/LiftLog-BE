@@ -10,12 +10,7 @@ import (
 
 func WhoAmI(c *gin.Context) {
 	// Get userID from context (set by the AuthMiddleware)
-	userID, exists := c.Get("userID")
-
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
+	userID, _ := c.Get("userID")
 
 	user, err := services.GetUserByID(userID.(uint))
 	if err != nil {

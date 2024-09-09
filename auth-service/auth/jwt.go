@@ -14,7 +14,8 @@ var (
 )
 
 type Claims struct {
-	UserID uint `json:"user_id"`
+	UserID uint   `json:"user_id"`
+	Role   string `json:"role"`
 	jwt.StandardClaims
 }
 
@@ -22,6 +23,7 @@ type Claims struct {
 func GenerateAccessToken(userID uint) (string, error) {
 	claims := Claims{
 		UserID: userID,
+		Role:   "user",
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(accessTokenExpiry).Unix(),
 		},
@@ -34,6 +36,7 @@ func GenerateAccessToken(userID uint) (string, error) {
 func GenerateRefreshToken(userID uint) (string, error) {
 	claims := Claims{
 		UserID: userID,
+		Role:   "user",
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(refreshTokenExpiry).Unix(),
 		},
