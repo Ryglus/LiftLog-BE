@@ -1,8 +1,8 @@
 package routes
 
 import (
-	"LiftLog-BE/controllers"
-	"LiftLog-BE/middleware"
+	"auth-service/controllers"
+	"auth-service/middleware"
 	"github.com/gin-gonic/gin"
 )
 

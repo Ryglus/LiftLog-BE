@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"LiftLog-BE/auth"
+	"auth-service/auth"
 	"net/http"
 	"strings"
 

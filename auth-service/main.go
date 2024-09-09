@@ -1,8 +1,8 @@
 package main
 
 import (
-	"LiftLog-BE/database"
-	"LiftLog-BE/routes"
+	"auth-service/database"
+	"auth-service/routes"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )

@@ -1,7 +1,7 @@
 package database
 
 import (
-	"LiftLog-BE/models"
+	"auth-service/models"
 	"fmt"
 	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"

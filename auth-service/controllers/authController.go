@@ -1,15 +1,17 @@
 package controllers
 
 import (
-	"LiftLog-BE/services"
+	"auth-service/services"
 	"errors"
 	"github.com/gin-gonic/gin"
+	"log"
 	"net/http"
 )
 
 func WhoAmI(c *gin.Context) {
 	// Get userID from context (set by the AuthMiddleware)
 	userID, exists := c.Get("userID")
+
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
@@ -20,7 +22,7 @@ func WhoAmI(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
 	}
-
+	log.Print(user)
 	c.JSON(http.StatusOK, gin.H{
 		"username": user.Username,
 		"email":    user.Email,

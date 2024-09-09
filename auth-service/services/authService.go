@@ -1,9 +1,9 @@
 package services
 
 import (
-	"LiftLog-BE/auth"
-	"LiftLog-BE/database"
-	"LiftLog-BE/models"
+	"auth-service/auth"
+	"auth-service/database"
+	"auth-service/models"
 	"errors"
 	"golang.org/x/crypto/bcrypt"
 )
