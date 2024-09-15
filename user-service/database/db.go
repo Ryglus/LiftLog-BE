@@ -7,6 +7,7 @@ import (
 	"gorm.io/gorm"
 	"log"
 	"os"
+	"user-service/models"
 )
 
 var DB *gorm.DB
@@ -32,7 +33,7 @@ func ConnectDatabase() {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
-	err = DB.AutoMigrate()
+	err = DB.AutoMigrate(&models.User{})
 	if err != nil {
 		return
 	}

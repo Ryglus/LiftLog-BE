@@ -6,14 +6,18 @@ import (
 	"user-service/middleware"
 )
 
-func AuthRoutes(r *gin.Engine) {
-	// Unprotected routes
-	//unprotected := r.Group("/api")
-	//unprotected.GET("/users", controllers.GetUserss) // List all users (unprotected)
+func UserRoutes(r *gin.Engine) {
+	unprotected := r.Group("/api")
 
-	// Protected routes
 	protected := r.Group("/api")
 	protected.Use(middleware.AuthMiddleware())
-	protected.GET("/users/:id", controllers.GetUser) // Get user by ID (protected)
+	unprotected.GET("/profile/:id", controllers.GetUserProfile)
+	// Profile management
+	protected.PUT("/profile", controllers.UpdateProfile)
+	protected.GET("/profile/me", controllers.GetUserProfile)
+	protected.POST("/upload-profile-image", controllers.UploadProfileImage)
+
+	// Search
+	protected.GET("/search", controllers.SearchProfiles)
 
 }

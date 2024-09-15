@@ -24,7 +24,7 @@ func main() {
 	}))
 
 	// Register routes
-	routes.AuthRoutes(r)
+	routes.UserRoutes(r)
 
 	// Run server
 	err := r.Run(":8081")
