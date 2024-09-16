@@ -53,7 +53,7 @@ func Register(c *gin.Context) {
 
 func Login(c *gin.Context) {
 	var input struct {
-		Username string `json:"username"`
+		Email    string `json:"email"`
 		Password string `json:"password"`
 	}
 
@@ -62,7 +62,7 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	accessToken, refreshToken, err := services.LoginUser(input.Username, input.Password)
+	accessToken, refreshToken, err := services.LoginUser(input.Email, input.Password)
 	if errors.Is(err, services.ErrMissingFields) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Username and password are required"})
 		return

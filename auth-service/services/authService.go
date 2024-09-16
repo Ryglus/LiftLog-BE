@@ -46,7 +46,7 @@ func LoginUser(username, password string) (string, string, error) {
 
 	// Find user by username
 	var user models.User
-	if err := database.DB.Where("username = ?", username).First(&user).Error; err != nil {
+	if err := database.DB.Where("email = ?", username).First(&user).Error; err != nil {
 		return "", "", ErrUserNotFound
 	}
 
