@@ -16,5 +16,5 @@ func AuthRoutes(r *gin.Engine) {
 	// Protected route
 	protected := r.Group("/api/auth")
 	protected.Use(middleware.AuthMiddleware())
-	protected.GET("/refresh-token", controllers.RefreshAccessToken)
+	protected.POST("/refresh-token", controllers.RefreshAccessToken)
 }

@@ -60,6 +60,7 @@ func GetUserProfile(c *gin.Context) {
 	c.JSON(http.StatusOK, user)
 }
 
+// UploadProfileImage TODO: DELETE OLD PIC UPON UPDATE PLEASE
 func UploadProfileImage(c *gin.Context) {
 	// Extract the user ID from the context (set by AuthMiddleware)
 	userID, exists := c.Get("user_id")

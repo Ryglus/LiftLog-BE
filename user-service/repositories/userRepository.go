@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"strings"
 	"user-service/database"
 	"user-service/models"
 )
@@ -8,7 +9,8 @@ import (
 // SearchProfiles searches for users based on a query
 func SearchProfiles(query string) ([]models.User, error) {
 	var users []models.User
-	if err := database.DB.Where("username LIKE ?", "%"+query+"%").Find(&users).Error; err != nil {
+	query = strings.ToLower(query)
+	if err := database.DB.Where("LOWER(username) LIKE ?", "%"+query+"%").Find(&users).Error; err != nil {
 		return nil, err
 	}
 	return users, nil
