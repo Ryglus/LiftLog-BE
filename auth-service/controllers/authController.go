@@ -4,25 +4,8 @@ import (
 	"auth-service/services"
 	"errors"
 	"github.com/gin-gonic/gin"
-	"log"
 	"net/http"
 )
-
-func WhoAmI(c *gin.Context) {
-	// Get userID from context (set by the AuthMiddleware)
-	userID, _ := c.Get("userID")
-
-	user, err := services.GetUserByID(userID.(uint))
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-		return
-	}
-	log.Print(user)
-	c.JSON(http.StatusOK, gin.H{
-		"username": user.Username,
-		"email":    user.Email,
-	})
-}
 
 func Register(c *gin.Context) {
 	var input struct {
@@ -80,6 +63,42 @@ func Login(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"access_token":  accessToken,
 		"refresh_token": refreshToken,
+	})
+}
+func RefreshAccessToken(c *gin.Context) {
+	// Retrieve claims from the context (set by AuthMiddleware)
+	userClaims, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Refresh token required"})
+		return
+	}
+
+	// Assert claims type
+	claims, ok := userClaims.(map[string]interface{})
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid claims format"})
+		return
+	}
+
+	// Ensure it's a refresh token by checking the "version" field
+	if claims["version"] != "REFRESH" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token type"})
+		return
+	}
+
+	// Extract the userID from the claims
+	userID := uint(claims["user_id"].(float64)) // JWT numbers are float64
+
+	// Generate a new access token
+	accessToken, err := services.RefreshTokens(userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Return the new access token
+	c.JSON(http.StatusOK, gin.H{
+		"access_token": accessToken,
 	})
 }
 

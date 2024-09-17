@@ -9,13 +9,11 @@ import (
 )
 
 var (
-	ErrInvalidInput         = errors.New("invalid input")
 	ErrMissingFields        = errors.New("all fields are required")
 	ErrUserNotFound         = errors.New("user not found")
 	ErrInvalidCredentials   = errors.New("invalid credentials")
 	ErrFailedToHashPassword = errors.New("failed to hash password")
 	ErrFailedToCreateToken  = errors.New("failed to create token")
-	ErrExpiredRefreshToken  = errors.New("refresh token expired")
 )
 
 // RegisterUser registers a new user
@@ -69,38 +67,13 @@ func LoginUser(username, password string) (string, string, error) {
 
 	return accessToken, refreshToken, nil
 }
-func RefreshTokens(refreshTokenStr string) (string, string, error) {
-	// Parse and validate the refresh token
-	refreshToken, err := auth.ParseToken(refreshTokenStr)
-	if err != nil {
-		return "", "", ErrExpiredRefreshToken
-	}
-
-	claims, ok := refreshToken.Claims.(*auth.Claims)
-	if !ok || !refreshToken.Valid {
-		return "", "", ErrExpiredRefreshToken
-	}
+func RefreshTokens(userID uint) (string, error) {
 
 	// Generate new access token
-	accessToken, err := auth.GenerateAccessToken(claims.UserID)
+	accessToken, err := auth.GenerateAccessToken(userID)
 	if err != nil {
-		return "", "", err
+		return "", err
 	}
 
-	// Generate new refresh token
-	newRefreshToken, err := auth.GenerateRefreshToken(claims.UserID)
-	if err != nil {
-		return "", "", err
-	}
-
-	return accessToken, newRefreshToken, nil
-}
-
-// GetUserByID retrieves a user by their ID
-func GetUserByID(userID uint) (*models.User, error) {
-	var user models.User
-	if err := database.DB.First(&user, userID).Error; err != nil {
-		return nil, err
-	}
-	return &user, nil
+	return accessToken, nil
 }

@@ -14,8 +14,9 @@ var (
 )
 
 type Claims struct {
-	UserID uint   `json:"user_id"`
-	Role   string `json:"role"`
+	UserID  uint   `json:"user_id"`
+	Role    string `json:"role"`
+	Version string `json:"version"`
 	jwt.StandardClaims
 }
 
@@ -35,8 +36,9 @@ func GenerateAccessToken(userID uint) (string, error) {
 // GenerateRefreshToken creates a new refresh token
 func GenerateRefreshToken(userID uint) (string, error) {
 	claims := Claims{
-		UserID: userID,
-		Role:   "user",
+		UserID:  userID,
+		Role:    "user",
+		Version: "REFRESH",
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(refreshTokenExpiry).Unix(),
 		},
@@ -45,29 +47,18 @@ func GenerateRefreshToken(userID uint) (string, error) {
 	return token.SignedString(jwtSecret)
 }
 
-// ValidateToken checks if a token is valid
-func ValidateToken(tokenStr string) (*Claims, error) {
-	token, err := jwt.ParseWithClaims(tokenStr, &Claims{}, func(token *jwt.Token) (interface{}, error) {
-		// Ensure token method is as expected
+func ValidateToken(tokenStr string) (map[string]interface{}, error) {
+	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.New("unexpected signing method")
 		}
 		return jwtSecret, nil
 	})
-
 	if err != nil {
 		return nil, err
 	}
-
-	if claims, ok := token.Claims.(*Claims); ok && token.Valid {
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 		return claims, nil
 	}
-
 	return nil, errors.New("invalid token claims")
-}
-
-func ParseToken(tokenStr string) (*jwt.Token, error) {
-	return jwt.ParseWithClaims(tokenStr, &Claims{}, func(token *jwt.Token) (interface{}, error) {
-		return jwtSecret, nil
-	})
 }

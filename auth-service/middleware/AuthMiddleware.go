@@ -2,10 +2,9 @@ package middleware
 
 import (
 	"auth-service/auth"
+	"github.com/gin-gonic/gin"
 	"net/http"
 	"strings"
-
-	"github.com/gin-gonic/gin"
 )
 
 // AuthMiddleware validates JWT and adds user info to the context
@@ -17,20 +16,14 @@ func AuthMiddleware() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-
-		// Remove Bearer if present
-		tokenStr = strings.TrimPrefix(tokenStr, "Bearer ")
-
-		// Validate token and retrieve claims
-		claims, err := auth.ValidateToken(tokenStr)
+		claims, err := auth.ValidateToken(strings.TrimPrefix(tokenStr, "Bearer "))
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			c.Abort()
 			return
 		}
 
-		// Attach user ID to context
-		c.Set("userID", claims.UserID)
+		c.Set("user", claims)
 		c.Next()
 	}
 }
