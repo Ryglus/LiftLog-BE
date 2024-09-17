@@ -22,7 +22,7 @@ func main() {
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
 	}))
-
+	r.Static("/uploads", "./uploads")
 	// Register routes
 	routes.UserRoutes(r)
 

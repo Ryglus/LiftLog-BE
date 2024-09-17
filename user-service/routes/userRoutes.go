@@ -8,16 +8,12 @@ import (
 
 func UserRoutes(r *gin.Engine) {
 	unprotected := r.Group("/api")
+	unprotected.GET("/search", controllers.SearchProfiles)
+	unprotected.GET("/profile/:id", controllers.GetUserProfile)
 
 	protected := r.Group("/api")
 	protected.Use(middleware.AuthMiddleware())
-	unprotected.GET("/profile/:id", controllers.GetUserProfile)
-	// Profile management
 	protected.PUT("/profile", controllers.UpdateProfile)
 	protected.GET("/profile/me", controllers.GetUserProfile)
 	protected.POST("/upload-profile-image", controllers.UploadProfileImage)
-
-	// Search
-	protected.GET("/search", controllers.SearchProfiles)
-
 }
