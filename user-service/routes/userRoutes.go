@@ -15,5 +15,4 @@ func UserRoutes(r *gin.Engine) {
 	protected.Use(middleware.AuthMiddleware())
 	protected.PUT("/profile", controllers.UpdateProfile)
 	protected.GET("/profile/me", controllers.GetUserProfile)
-	protected.POST("/upload-profile-image", controllers.UploadProfileImage)
 }

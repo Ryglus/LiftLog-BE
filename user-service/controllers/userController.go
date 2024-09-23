@@ -1,12 +1,9 @@
 package controllers
 
 import (
-	"fmt"
+	"log"
 	"net/http"
-	"os"
-	"path/filepath"
-	"user-service/database"
-	"user-service/models"
+	"user-service/repositories"
 	"user-service/services"
 
 	"github.com/gin-gonic/gin"
@@ -33,12 +30,29 @@ func UpdateProfile(c *gin.Context) {
 	JWTuser, _ := c.Get("user")
 	userID := JWTuser.(map[string]interface{})["user_id"].(float64)
 
-	profileImage, err := services.HandleFileUpload(c, "profile_image")
+	// Find the user by ID to get the current profile image path
+	user, err := repositories.FindUserByID(uint(userID))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "User not found"})
+		return
+	}
+
+	profileImage, err := services.HandleFileUpload(c, "profile_image", "pfp")
 	if err != nil && err != http.ErrMissingFile {
+		log.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload profile image"})
 		return
 	}
 
+	// If a new image is uploaded, delete the old one
+	if profileImage != "" && user.ProfileImage != "" {
+		if err := services.DeleteOldFile(user.ProfileImage); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete old profile image"})
+			return
+		}
+		user.ProfileImage = profileImage // Update with new image path
+	}
+	//TODO: non posted updates not updated
 	err = services.UpdateUserProfile(uint(userID), c.PostForm("username"), c.PostForm("bio"), c.PostForm("location"), profileImage)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update profile"})
@@ -58,57 +72,4 @@ func GetUserProfile(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, user)
-}
-
-// UploadProfileImage TODO: DELETE OLD PIC UPON UPDATE PLEASE
-func UploadProfileImage(c *gin.Context) {
-	// Extract the user ID from the context (set by AuthMiddleware)
-	userID, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
-
-	// Get the uploaded file from the request
-	file, err := c.FormFile("profile_image")
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "No file uploaded"})
-		return
-	}
-
-	// Set the path where the file will be saved
-	uploadDir := "./uploads"
-	fileName := fmt.Sprintf("user_%v_%s", userID, filepath.Base(file.Filename)) // e.g., user_1_profile.jpg
-	filePath := filepath.Join(uploadDir, fileName)
-
-	// Ensure the uploads directory exists
-	if err := os.MkdirAll(uploadDir, os.ModePerm); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create upload directory"})
-		return
-	}
-
-	// Save the file
-	if err := c.SaveUploadedFile(file, filePath); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save file"})
-		return
-	}
-
-	// Update the user's profile image in the database
-	var user models.User
-	if err := database.DB.First(&user, userID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
-		return
-	}
-	user.ProfileImage = filePath
-
-	if err := database.DB.Save(&user).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user profile"})
-		return
-	}
-
-	// Respond with the updated profile image path
-	c.JSON(http.StatusOK, gin.H{
-		"message":     "Profile image uploaded successfully",
-		"profile_url": filePath,
-	})
 }
