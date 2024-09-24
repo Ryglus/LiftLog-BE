@@ -34,7 +34,7 @@ func HandleFileUpload(c *gin.Context, formKey string, dest string) (string, erro
 	}
 
 	// Create the directory if it doesn't exist
-	if err := os.MkdirAll(dest, os.ModePerm); err != nil {
+	if err := os.MkdirAll(fmt.Sprintf("./uploads/%s", dest), os.ModePerm); err != nil {
 		return "", err
 	}
 
@@ -43,7 +43,12 @@ func HandleFileUpload(c *gin.Context, formKey string, dest string) (string, erro
 	if err != nil {
 		return "", err
 	}
-	defer out.Close()
+	defer func(out *os.File) {
+		err := out.Close()
+		if err != nil {
+
+		}
+	}(out)
 
 	// Copy the file to the uploads folder
 	_, err = io.Copy(out, file)

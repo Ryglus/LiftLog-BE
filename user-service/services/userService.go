@@ -1,77 +1,44 @@
 package services
 
 import (
-	"context"
-	"encoding/json"
-	"errors"
-	"fmt"
-	"github.com/go-redis/redis/v8"
 	"log"
 	"strings"
-	"user-service/database"
 	"user-service/models"
 	"user-service/repositories"
 )
 
-var ctx = context.Background()
-
 func SearchUsers(query string) ([]models.SearchedUser, error) {
 	var users []models.SearchedUser
 
-	// Prepare the search range
-	query = strings.ToLower(query)
-	start := "[" + query        // Redis range start for ZRANGEBYLEX (inclusive)
-	end := "[" + query + "\xff" // End range ensures all matches for the prefix
-
-	// Fetch matching user keys from the sorted set using ZRANGEBYLEX
-	autocompleteKeys, err := database.RedisClient.ZRangeByLex(ctx, "users_autocomplete", &redis.ZRangeBy{
-		Min: start,
-		Max: end,
-	}).Result()
-
+	// Fetch autocomplete keys (prioritized usernames/fullnames)
+	autocompleteKeys, err := repositories.GetAutocompleteKeys(query)
 	if err != nil {
-		if err == redis.Nil {
-			log.Printf("No cached results found for query: %s", query)
-			return nil, errors.New("no cached results found in Redis")
-		}
-		log.Printf("Error fetching data from Redis: %v", err)
 		return nil, err
 	}
 
 	// Log the cached autocomplete keys for debugging
 	log.Printf("Autocomplete keys: %v", autocompleteKeys)
 
-	// Fetch the user profiles from the 'user_profiles' hash using the userID from user_id_map
+	// Fetch user profiles for each key
 	for _, redisKey := range autocompleteKeys {
-		// Get the userID from the Redis hash map (user_id_map) using the redisKey (username/fullname)
-		userID, err := database.RedisClient.HGet(ctx, "user_id_map", redisKey).Result()
-		if err == redis.Nil {
-			log.Printf("No user ID found for key: %s", redisKey)
-			continue
-		} else if err != nil {
-			log.Printf("Error fetching user ID from Redis: %v", err)
-			continue
-		}
-
-		// Now use the userID to fetch the full user profile from 'user_profiles' hash
-		cachedUser, err := database.RedisClient.HGet(ctx, "user_profiles", userID).Result()
-		if err == redis.Nil {
-			log.Printf("No cached user profile found for userID: %s", userID)
-			continue
-		} else if err != nil {
-			log.Printf("Error fetching user profile from Redis: %v", err)
-			continue
-		}
-
-		var user models.SearchedUser
-		err = json.Unmarshal([]byte(cachedUser), &user)
+		// Fetch the userIDs (array) from the hash (since there can be multiple IDs for non-unique names)
+		userIDs, err := repositories.GetUserIDsFromKey(redisKey)
 		if err != nil {
-			log.Printf("Error unmarshaling cached user profile: %v", err)
+			log.Printf("Error fetching userIDs for key: %s", redisKey)
 			continue
 		}
 
-		// Append the user to the result slice
-		users = append(users, user)
+		// Iterate over each userID and fetch the corresponding user profile
+		for _, userID := range userIDs {
+			user, err := repositories.GetUserProfileByID(userID)
+			if err != nil {
+				log.Printf("Error fetching user profile for userID: %s", userID)
+				continue
+			}
+
+			// Append the user to the result slice
+			users = append(users, *user)
+		}
 	}
 
 	// Return the matching users
@@ -90,6 +57,10 @@ func UpdateUserProfile(userID uint, username, bio, location, profileImage string
 	if err != nil {
 		return err
 	}
+
+	// Store the old username and fullname before updating
+	oldUsername := user.Username
+	oldFullname := user.FullName
 
 	// Update fields only if provided
 	if username != "" {
@@ -111,40 +82,57 @@ func UpdateUserProfile(userID uint, username, bio, location, profileImage string
 		return err
 	}
 
-	// Add username and fullname to Redis sorted set for autocomplete
-	err = database.RedisClient.ZAdd(ctx, "users_autocomplete", &redis.Z{
-		Score:  0,                              // Score doesn't matter for autocomplete
-		Member: strings.ToLower(user.Username), // Store the username in autocomplete
-	}).Err()
-	if err != nil {
-		return err
-	}
-
-	if user.FullName != "" {
-		// Add fullname separately to Redis sorted set for autocomplete
-		err = database.RedisClient.ZAdd(ctx, "users_autocomplete", &redis.Z{
-			Score:  0,                              // Score doesn't matter for autocomplete
-			Member: strings.ToLower(user.FullName), // Store the fullname in autocomplete
-		}).Err()
+	// Remove old username and fullname from Redis if they have changed
+	if oldUsername != "" && oldUsername != user.Username {
+		err = repositories.RemoveFromAutocomplete(strings.ToLower(oldUsername))
+		if err != nil {
+			return err
+		}
+		err = repositories.RemoveUserMapping(strings.ToLower(oldUsername))
 		if err != nil {
 			return err
 		}
 	}
 
-	// Map username and fullname to the userID in Redis hash
-	err = database.RedisClient.HSet(ctx, "user_id_map", strings.ToLower(user.Username), user.ID).Err()
-	if err != nil {
-		return err
-	}
-
-	if user.FullName != "" {
-		err = database.RedisClient.HSet(ctx, "user_id_map", strings.ToLower(user.FullName), user.ID).Err()
+	if oldFullname != "" && oldFullname != user.FullName {
+		err = repositories.RemoveFromAutocomplete(strings.ToLower(oldFullname))
+		if err != nil {
+			return err
+		}
+		err = repositories.RemoveUserMapping(strings.ToLower(oldFullname))
 		if err != nil {
 			return err
 		}
 	}
 
-	// Cache the full user profile in the 'user_profiles' hash using userID as the field
+	// Add new username to Redis sorted set for autocomplete with higher priority (score = 0)
+	err = repositories.AddToAutocompleteWithPriority(strings.ToLower(user.Username), 1)
+	if err != nil {
+		return err
+	}
+
+	// Add fullname to Redis sorted set with lower priority (score = -1)
+	if user.FullName != "" {
+		err = repositories.AddToAutocompleteWithPriority(strings.ToLower(user.FullName), 0)
+		if err != nil {
+			return err
+		}
+	}
+
+	// Map username and fullname to userID in Redis (allow multiple IDs)
+	err = repositories.AddUserToMap(strings.ToLower(user.Username), user.ID)
+	if err != nil {
+		return err
+	}
+
+	if user.FullName != "" {
+		err = repositories.AddUserToMap(strings.ToLower(user.FullName), user.ID)
+		if err != nil {
+			return err
+		}
+	}
+
+	// Cache the full user profile in Redis
 	searchedUser := models.SearchedUser{
 		ID:           user.ID,
 		Username:     user.Username,
@@ -152,13 +140,7 @@ func UpdateUserProfile(userID uint, username, bio, location, profileImage string
 		ProfileImage: user.ProfileImage,
 	}
 
-	userJSON, err := json.Marshal(searchedUser)
-	if err != nil {
-		return err
-	}
-
-	// Store the full profile data using the userID as the field in a single hash
-	err = database.RedisClient.HSet(ctx, "user_profiles", fmt.Sprintf("%d", user.ID), userJSON).Err()
+	err = repositories.CacheUserProfile(&searchedUser)
 	if err != nil {
 		return err
 	}
