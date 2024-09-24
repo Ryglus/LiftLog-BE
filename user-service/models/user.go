@@ -15,3 +15,9 @@ type User struct {
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
 }
+type SearchedUser struct {
+	ID           uint   `json:"id"`
+	Username     string `json:"username"`
+	FullName     string `json:"full_name"`
+	ProfileImage string `json:"profile_image"`
+}

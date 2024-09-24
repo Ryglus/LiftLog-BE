@@ -8,8 +8,8 @@ import (
 
 func UserRoutes(r *gin.Engine) {
 	unprotected := r.Group("/api")
-	unprotected.GET("/search", controllers.SearchProfiles)
-	unprotected.GET("/profile/:id", controllers.GetUserProfile)
+	unprotected.GET("/search", controllers.SearchUsers)
+	unprotected.GET("/profile", controllers.SearchProfiles)
 
 	protected := r.Group("/api")
 	protected.Use(middleware.AuthMiddleware())

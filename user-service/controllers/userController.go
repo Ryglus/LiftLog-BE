@@ -1,13 +1,29 @@
 package controllers
 
 import (
+	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
+	"strings"
 	"user-service/repositories"
 	"user-service/services"
-
-	"github.com/gin-gonic/gin"
 )
+
+func SearchUsers(c *gin.Context) {
+	query := c.Query("query")
+	if query == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Search query is required"})
+		return
+	}
+
+	users, err := services.SearchUsers(strings.ToLower(query))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to search profiles"})
+		return
+	}
+
+	c.JSON(http.StatusOK, users)
+}
 
 // SearchProfiles allows users to search for other profiles
 func SearchProfiles(c *gin.Context) {
@@ -17,7 +33,7 @@ func SearchProfiles(c *gin.Context) {
 		return
 	}
 
-	users, err := services.SearchProfiles(query)
+	users, err := services.SearchProfiles(strings.ToLower(query))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to search profiles"})
 		return

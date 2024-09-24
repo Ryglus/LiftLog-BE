@@ -9,24 +9,36 @@ import (
 	"path/filepath"
 )
 
-// HandleFileUpload processes file uploads and returns the file path with a UUID as filename
+// HandleFileUpload processes file uploads and returns the file path with a shortened UUID as filename
 func HandleFileUpload(c *gin.Context, formKey string, dest string) (string, error) {
 	file, header, err := c.Request.FormFile(formKey)
 	if err != nil {
 		return "", err // Handle missing file case in the caller
 	}
 
-	// Generate a new UUID for the image file
+	// Generate a shortened UUID for the image file
 	fileExtension := filepath.Ext(header.Filename)
-	newFileName := fmt.Sprintf("%s%s", uuid.New().String(), fileExtension)
+	var newFileName string
+	var filePath string
+
+	// Keep generating until a unique file name is found
+	for {
+		shortUUID := uuid.New().String()[:8] // Use only the first 8 characters of the UUID
+		newFileName = fmt.Sprintf("%s%s", shortUUID, fileExtension)
+		filePath = fmt.Sprintf("./uploads/%s/%s", dest, newFileName)
+
+		// Check if the file already exists
+		if _, err := os.Stat(filePath); os.IsNotExist(err) {
+			break // Exit the loop if the file doesn't exist
+		}
+	}
 
 	// Create the directory if it doesn't exist
 	if err := os.MkdirAll(dest, os.ModePerm); err != nil {
 		return "", err
 	}
 
-	// Create file path for saving the file with UUID as filename
-	filePath := fmt.Sprintf("./uploads/%s/%s", dest, newFileName)
+	// Create file path for saving the file with shortened UUID as filename
 	out, err := os.Create(filePath)
 	if err != nil {
 		return "", err

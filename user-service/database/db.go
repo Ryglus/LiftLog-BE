@@ -1,7 +1,9 @@
 package database
 
 import (
+	"context"
 	"fmt"
+	"github.com/go-redis/redis/v8"
 	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -11,15 +13,17 @@ import (
 )
 
 var DB *gorm.DB
+var RedisClient *redis.Client
+var ctx = context.Background()
 
 func ConnectDatabase() {
-	// Load environment variables from .env file
+	// Load environment variables
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
 
-	// Retrieve environment variables
+	// PostgreSQL setup
 	user := os.Getenv("POSTGRES_USER")
 	password := os.Getenv("POSTGRES_PASSWORD")
 	dbname := os.Getenv("POSTGRES_DB")
@@ -33,6 +37,25 @@ func ConnectDatabase() {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
+	// Redis setup
+	redisHost := os.Getenv("REDIS_HOST")
+	redisPort := os.Getenv("REDIS_PORT")
+	redisPassword := os.Getenv("REDIS_PASSWORD")
+
+	RedisClient = redis.NewClient(&redis.Options{
+		Addr:     fmt.Sprintf("%s:%s", redisHost, redisPort),
+		Password: redisPassword,
+		DB:       0,
+	})
+
+	_, err = RedisClient.Ping(ctx).Result()
+	if err != nil {
+		log.Fatalf("Failed to connect to Redis: %v", err)
+	}
+
+	log.Println("Connected to Redis successfully!")
+
+	// PostgreSQL AutoMigrate
 	err = DB.AutoMigrate(&models.User{})
 	if err != nil {
 		return

@@ -1,15 +1,22 @@
 package repositories
 
 import (
-	"strings"
 	"user-service/database"
 	"user-service/models"
 )
 
+// MAKE IT SO THIS USES ONLY REDIS
+func SearchUsers(query string) ([]models.User, error) {
+	var users []models.User
+	if err := database.DB.Where("LOWER(username) LIKE ?", "%"+query+"%").Find(&users).Error; err != nil {
+		return nil, err
+	}
+	return users, nil
+}
+
 // SearchProfiles searches for users based on a query
 func SearchProfiles(query string) ([]models.User, error) {
 	var users []models.User
-	query = strings.ToLower(query)
 	if err := database.DB.Where("LOWER(username) LIKE ?", "%"+query+"%").Find(&users).Error; err != nil {
 		return nil, err
 	}
