@@ -23,8 +23,24 @@ services:
     networks:
       - liftlog-network
 
+  influxdb:
+    image: influxdb:2.6
+    container_name: influxdb
+    environment:
+      INFLUXDB_ADMIN_USER: admin
+      INFLUXDB_ADMIN_PASSWORD: adminpass
+      INFLUXDB_ORG: liftlog_org
+      INFLUXDB_BUCKET: workout_data
+    volumes:
+      - influxdb-data:/var/lib/influxdb2
+    ports:
+      - "8086:8086"
+    networks:
+      - liftlog-network
+
 volumes:
   db-data:
+  influxdb-data:
 
 networks:
   liftlog-network:
