@@ -7,13 +7,13 @@ import (
 	"net/http"
 )
 
-// GetSchedule retrieves the user's schedule
-func GetSchedule(c *gin.Context) {
+// GetSchedules retrieves the user's schedule
+func GetSchedules(c *gin.Context) {
 	JWTuser, _ := c.Get("user")
 	userID := uint(JWTuser.(map[string]interface{})["user_id"].(float64))
 
 	// Use the service to get the user's schedule
-	schedule, err := services.GetUserSchedule(userID)
+	schedule, err := services.GetUserSchedules(userID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Schedule not found"})
 		return
@@ -23,6 +23,7 @@ func GetSchedule(c *gin.Context) {
 
 // PutSchedule creates or updates the user's schedule
 func PutSchedule(c *gin.Context) {
+	// Extract the user ID from the JWT
 	JWTuser, _ := c.Get("user")
 	userID := uint(JWTuser.(map[string]interface{})["user_id"].(float64))
 
@@ -31,13 +32,10 @@ func PutSchedule(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
-	// Set the user ID from the JWT claims
 	schedule.UserID = userID
-
-	// Use the service to save the schedule
-	if err := services.SaveUserSchedule(&schedule); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	// Ensure the user can only update their own schedule
+	if err := services.SaveUserSchedule(&schedule, userID); err != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 		return
 	}
 

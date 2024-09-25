@@ -5,8 +5,8 @@ import "time"
 //TODO: Add image and colour saving
 
 type Schedule struct {
-	ID            uint      `gorm:"primaryKey" json:"id"`
-	UserID        uint      `json:"user_id"`
+	ID            uint      `gorm:"primaryKey" json:"id"` // This maps from the "id" field in the request
+	UserID        uint      `json:"-"`                    // Do not map this from the request
 	Title         string    `json:"title"`
 	Active        bool      `json:"active"`
 	StartDate     time.Time `json:"start_date"`
@@ -19,7 +19,6 @@ type Schedule struct {
 type Workout struct {
 	ID          uint       `gorm:"primaryKey" json:"id"`
 	ScheduleID  uint       `json:"schedule_id"`
-	DayOfSplit  int        `json:"day_of_split"` // e.g., Day 1 of the split
 	WorkoutName string     `json:"workout_name"`
 	Exercises   []Exercise `json:"exercises"`
 	CreatedAt   time.Time  `json:"created_at"`
