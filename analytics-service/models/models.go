@@ -19,8 +19,8 @@ type Schedule struct {
 // ScheduleWorkout Join Table for Schedule and Workout
 type ScheduleWorkout struct {
 	ID          uint          `gorm:"primaryKey"`                      // Auto-increment ID
-	ScheduleID  uint          `json:"workout_id"`                      // Foreign key for schedule
-	WorkoutID   uint          `json:"schedule_id"`                     // Foreign key for workout
+	ScheduleID  uint          `json:"schedule_id"`                     // Foreign key for schedule
+	WorkoutID   uint          `json:"workout_id"`                      // Foreign key for workout
 	DaysOfSplit pq.Int64Array `gorm:"type:int[]" json:"days_of_split"` // Array of days this workout is assigned to within the schedule
 }
 type ScheduleWorkoutResponse struct {
