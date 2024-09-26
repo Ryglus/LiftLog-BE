@@ -21,9 +21,25 @@ func GetSchedules(c *gin.Context) {
 	c.JSON(http.StatusOK, schedule)
 }
 
-// PutSchedule creates or updates the user's schedule
+func AssignWorkoutToSchedule(c *gin.Context) {
+	JWTuser, _ := c.Get("user")
+	userID := uint(JWTuser.(map[string]interface{})["user_id"].(float64))
+
+	var workoutToSchedule models.ScheduleWorkout
+	if err := c.ShouldBindJSON(&workoutToSchedule); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	// Use the service to associate workout and schedule for each day
+	if err := services.AssignWorkoutToSchedule(&workoutToSchedule, userID); err != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Workout assigned to schedule successfully"})
+}
+
 func PutSchedule(c *gin.Context) {
-	// Extract the user ID from the JWT
 	JWTuser, _ := c.Get("user")
 	userID := uint(JWTuser.(map[string]interface{})["user_id"].(float64))
 
@@ -32,8 +48,8 @@ func PutSchedule(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	schedule.UserID = userID
-	// Ensure the user can only update their own schedule
+
+	// Use the service to save the schedule and check authorization
 	if err := services.SaveUserSchedule(&schedule, userID); err != nil {
 		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 		return

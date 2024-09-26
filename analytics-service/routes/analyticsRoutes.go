@@ -6,17 +6,20 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func RegisterAnalyticsRoutes(router *gin.Engine) {
+func RegisterRoutes(router *gin.Engine) {
 	protected := router.Group("/api/tracking")
 	protected.Use(middleware.AuthMiddleware()) // All routes use the auth middleware
 	{
-		protected.PUT("/schedule", controllers.PutSchedule)  // Create/Update Schedule
-		protected.GET("/schedule", controllers.GetSchedules) // Get Schedule
+		protected.GET("/overview", controllers.GetTracking)
+		protected.GET("/schedule", controllers.GetSchedules)
 
-		//protected.PUT("/workout", controllers.PutWorkout(pgRepo))     // Create/Update Workout
-		//protected.GET("/workout/:id", controllers.GetWorkout(pgRepo)) // Get Workout by ID
+		protected.PUT("/schedule", controllers.PutSchedule)
+		protected.PUT("/schedule/workouts", controllers.AssignWorkoutToSchedule)
 
-		//protected.PUT("/log-workout", controllers.PutLogWorkout(influxRepo))              // Log workout
-		//protected.GET("/log-workout/:exercise_id", controllers.GetLogWorkout(influxRepo)) // Get workout log for an exercise
+		protected.GET("/workout", controllers.GetWorkout)
+
+		protected.PUT("/workout", controllers.PutWorkout)
+		protected.PUT("/workout/exercise", controllers.AssignExerciseToWorkout)
+
 	}
 }

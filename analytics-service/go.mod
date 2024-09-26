@@ -8,6 +8,7 @@ require (
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/influxdata/influxdb-client-go/v2 v2.14.0
 	github.com/joho/godotenv v1.5.1
+	github.com/lib/pq v1.10.9
 	gorm.io/driver/postgres v1.5.9
 	gorm.io/gorm v1.25.12
 )

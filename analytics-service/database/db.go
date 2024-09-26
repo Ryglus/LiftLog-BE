@@ -43,8 +43,8 @@ func InitPostgresDB() {
 		log.Fatalf("Failed to connect to PostgreSQL: %v", err)
 	}
 
-	// Auto-migrate your PostgreSQL models
-	err = PostgresDB.AutoMigrate(&models.Schedule{}, &models.Workout{}, &models.Exercise{})
+	// Auto-migrate your PostgreSQL models, including the join table
+	err = PostgresDB.AutoMigrate(&models.Schedule{}, &models.Workout{}, &models.Exercise{}, &models.ScheduleWorkout{})
 	if err != nil {
 		log.Fatalf("Failed to auto-migrate models: %v", err)
 	}

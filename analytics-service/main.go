@@ -27,7 +27,7 @@ func main() {
 	}))
 	r.Static("/uploads", "./uploads")
 	// Register routes
-	routes.RegisterAnalyticsRoutes(r)
+	routes.RegisterRoutes(r)
 
 	// Run server
 	err := r.Run(":8082")
